@@ -42,7 +42,13 @@ public class ApiExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         String error = "INVALID_REQUEST";
         String message = ex.getMessage() == null ? "" : ex.getMessage();
-        if (message.contains("Scenario not found")) {
+        if (message.contains("Zone not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "timestamp", Instant.now().toString(),
+                            "error", "ZONE_NOT_FOUND",
+                            "details", List.of(message)));
+        } else if (message.contains("Scenario not found")) {
             error = "INVALID_PLAYBACK_REQUEST";
         } else if (message.contains("location.zoneId")) {
             error = "INVALID_INCIDENT_REPORT";

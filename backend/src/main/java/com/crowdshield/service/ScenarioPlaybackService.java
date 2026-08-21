@@ -93,6 +93,22 @@ public class ScenarioPlaybackService {
         return current.toPlaybackState();
     }
 
+    public Scenario getCurrentScenario() {
+        return state.scenario;
+    }
+
+    public List<Frame> getFramesUpToCurrentOffset() {
+        PlaybackStateHolder current = state;
+        current.updateIfPlaying();
+        return current.getFramesUpToCurrentOffset();
+    }
+
+    public Frame getPreviousFrame() {
+        PlaybackStateHolder current = state;
+        current.updateIfPlaying();
+        return current.getPreviousFrame();
+    }
+
     private static class PlaybackStateHolder {
         private final Scenario scenario;
         private int currentOffsetSec;
@@ -170,6 +186,34 @@ public class ScenarioPlaybackService {
                 }
             }
             return result;
+        }
+
+        List<Frame> getFramesUpToCurrentOffset() {
+            List<Frame> result = new ArrayList<>();
+            for (Frame frame : scenario.frames()) {
+                if (frame.offsetSec() <= currentOffsetSec) {
+                    result.add(frame);
+                } else {
+                    break;
+                }
+            }
+            return result;
+        }
+
+        Frame getPreviousFrame() {
+            Frame prev = null;
+            Frame curr = findCurrentFrame();
+            if (curr == null) {
+                return null;
+            }
+            for (Frame frame : scenario.frames()) {
+                if (frame.offsetSec() < curr.offsetSec()) {
+                    prev = frame;
+                } else {
+                    break;
+                }
+            }
+            return prev;
         }
     }
 }
