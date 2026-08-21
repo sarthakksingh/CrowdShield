@@ -39,7 +39,7 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 export const api = {
   getEvent: () => fetchJson<EventInfo>('/api/events/current'),
 
-  getPlaybackState: () => fetchJson<PlaybackState>('/api/playback/state'),
+  getPlaybackState: () => fetchJson<PlaybackState>('/api/playback'),
   loadScenario: (scenarioId: string) =>
     fetchJson<PlaybackState>('/api/playback/load', {
       method: 'POST',
@@ -71,7 +71,14 @@ export const api = {
   getZoneAnalytics: (zoneId: string) =>
     fetchJson<ZoneAnalyticsDetailResponse>(`/api/analytics/zones/${zoneId}`),
 
-  getAlerts: () => fetchJson<AlertRecord[]>('/api/alerts'),
+  getAlerts: async () => {
+    try {
+      const data = await fetchJson<AlertRecord[]>('/api/alerts');
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  },
 
   getRecommendations: () =>
     fetchJson<RecommendationsResponse>('/api/recommendations/current'),

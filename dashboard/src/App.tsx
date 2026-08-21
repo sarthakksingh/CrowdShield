@@ -56,7 +56,7 @@ export const App: React.FC = () => {
       if (playbackData) setPlayback(playbackData);
       if (riskData) setRisk(riskData);
       if (analyticsData) setAnalytics(analyticsData);
-      if (alertsData) setAlerts(alertsData);
+      if (alertsData) setAlerts(Array.isArray(alertsData) ? alertsData : []);
       if (recommendationsData) setRecommendations(recommendationsData);
     } catch (err) {
       console.error('Data refresh error:', err);
