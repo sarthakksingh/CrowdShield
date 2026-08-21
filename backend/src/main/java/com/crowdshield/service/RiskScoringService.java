@@ -137,6 +137,71 @@ public class RiskScoringService {
         return new RiskResponse(overallRisk, zoneRisks, disclaimer);
     }
 
+    public RiskResponse evaluateMetricsStateless(List<ZoneMetric> metrics) {
+        if (metrics == null || metrics.isEmpty()) {
+            OverallRisk emptyOverall = new OverallRisk(0.0, RiskLevel.LOW, "STABLE", 1.0, List.of("nominal"), Map.of(), Map.of(), "stable", "", disclaimer);
+            return new RiskResponse(emptyOverall, List.of(), disclaimer);
+        }
+
+        List<ZoneRisk> zoneRisks = new ArrayList<>();
+        for (ZoneMetric metric : metrics) {
+            ScoredRisk scored = score(metric);
+            RiskLevel computedLevel = levelFor(scored.score);
+            Map<String, String> factorDescriptions = buildFactorDescriptions(scored.contributions, scored.score);
+            String horizon = estimateZoneHorizon(scored.score, computedLevel, "STABLE");
+
+            zoneRisks.add(new ZoneRisk(
+                    metric.zoneId(),
+                    round(scored.score),
+                    computedLevel,
+                    "STABLE",
+                    metric.confidence(),
+                    scored.reasons,
+                    scored.contributions,
+                    factorDescriptions,
+                    horizon,
+                    "",
+                    disclaimer));
+        }
+
+        double averageScore = zoneRisks.stream().mapToDouble(ZoneRisk::score).average().orElse(0.0);
+        double peakScore = zoneRisks.stream().mapToDouble(ZoneRisk::score).max().orElse(0.0);
+        double overallScore = (peakScore * 0.65) + (averageScore * 0.35);
+        RiskLevel overallComputed = levelFor(overallScore);
+
+        Map<String, Double> overallContributions = aggregateContributions(zoneRisks);
+        Map<String, String> overallFactorDescriptions = buildFactorDescriptions(overallContributions, overallScore);
+        String overallHorizon = estimateOverallHorizon(overallScore, overallComputed, "STABLE");
+
+        List<String> overallReasons = zoneRisks.stream()
+                .filter(z -> z.level().ordinal() >= RiskLevel.HIGH.ordinal())
+                .map(z -> "zone_" + z.zoneId() + "_elevated_risk")
+                .collect(Collectors.toList());
+        if (overallReasons.isEmpty()) {
+            overallReasons = List.of("risk_within_prototype_threshold");
+        }
+
+        double overallConfidence = metrics.stream()
+                .mapToDouble(ZoneMetric::confidence)
+                .average()
+                .orElse(0.86);
+
+        OverallRisk overallRisk = new OverallRisk(
+                round(overallScore),
+                overallComputed,
+                "STABLE",
+                round(overallConfidence),
+                overallReasons,
+                overallContributions,
+                overallFactorDescriptions,
+                overallHorizon,
+                "",
+                disclaimer);
+
+        return new RiskResponse(overallRisk, zoneRisks, disclaimer);
+    }
+
+
     public synchronized RiskConfigDto getRiskConfig() {
         Map<String, Double> thresholdsMap = new LinkedHashMap<>();
         thresholdsMap.put("moderate", moderateThreshold);
