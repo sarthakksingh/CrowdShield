@@ -1,102 +1,160 @@
-# CrowdShield Architecture (Phase 0)
+# CrowdShield — System Architecture & Data Flow
 
-## 1) Recommended monorepo structure
+CrowdShield is a real-time crowd safety intelligence and decision-support platform designed to monitor venue congestion, detect physical flow anomalies, evaluate explainable risk scores, and simulate proactive crowd interventions.
+
+---
+
+## 1. High-Level Architecture Diagram
 
 ```text
-crowdshield/
-  backend/          Spring Boot REST/SSE API
-  vision-service/   Python video and metric extraction
-  dashboard/        React authority dashboard
-  mobile/           Kotlin Android citizen app
-  demo-data/        venue graph and scripted scenarios
-  docs/             architecture and planning docs
++-------------------------------------------------------------------------------+
+|                             CROWDSHIELD SYSTEM                                |
++-------------------------------------------------------------------------------+
+
+  [ Prerecorded Scenarios / Vision Feed ]
+                    |
+                    v
+    +-----------------------------------------------+
+    |        Spring Boot Backend (Port 8080)        |
+    +-----------------------------------------------+
+    |  - ScenarioPlaybackService (Timeline/Frames)  |
+    |  - CrowdAnalyticsService (Flow/Bottlenecks)   |
+    |  - RiskScoringService (Weighted Formula)      |
+    |  - RiskStateService (Hysteresis Damping)      |
+    |  - AlertService (Persistence Filtered)        |
+    |  - InterventionEngineService (Advisors)       |
+    |  - SimulationService (Stateless Projections)  |
+    +-----------------------------------------------+
+           |                            |
+    (REST API: HTTP 200)       (SSE Stream: /api/stream)
+           |                            |
+           +--------------+-------------+
+                          |
+                          v
+    +-----------------------------------------------+
+    |      Authority Dashboard (Port 5173)          |
+    +-----------------------------------------------+
+    |  - PlaybackBar (Controls & Timeline Slider)   |
+    |  - VenueOverview (Traffic-Light Zone Grid)    |
+    |  - RiskSummaryPanel (Index, Horizon, Drivers) |
+    |  - ZoneDetailPanel (Sector Diagnostics)       |
+    |  - RecommendationPanel (Advisory Guidance)    |
+    |  - SimulationSandbox (Before/After Tester)    |
+    |  - AlertsFeed (Deduplicated Incident Stream)  |
+    +-----------------------------------------------+
 ```
 
-## 2) Build tool choices
+---
 
-| Component | Stack | Build/Run Tooling | Why this choice |
-|---|---|---|---|
-| backend | Spring Boot (Java/Kotlin compatible) | **Gradle Wrapper** (`./gradlew`) | Fast local setup, widely used with Spring and Android teams |
-| vision-service | Python 3.11 | **pip + pinned `requirements.txt`** | Minimal moving parts; deterministic installs for demo reliability |
-| dashboard | React + TypeScript + Vite | **npm** | Lowest friction for quick prototype and predictable dev server/build |
-| mobile | Kotlin Android | **Gradle Wrapper** | Native Android standard and team familiarity |
-| demo-data | JSON/CSV/scripts | Python scripts + static files | Reproducible scenario playback |
+## 2. End-to-End Data Flow
 
-Notes:
-- Keep everything CPU-friendly; no GPU assumption.
-- Keep external LLM/API calls optional and wrapped with timeout + fallback.
+```text
++----------+      1. Stream/Seek      +-------------------------+
+| Playback | -----------------------> | ScenarioPlaybackService |
++----------+                          +-------------------------+
+                                                   |
+                                                   | 2. Zone Metrics Frame
+                                                   v
++------------------------+            +-------------------------+
+|  CrowdAnalyticsService | <--------- |    RiskScoringService   |
++------------------------+            +-------------------------+
+| • Density Trends       |                         |
+| • Net Pressure         |            3. Risk Level & Factors
+| • Speed Drop %         |                         |
+| • Bottleneck Detectors |                         v
+| • Counterflow Conflict |            +-------------------------+
++------------------------+            |     RiskStateService    |
+            |                         +-------------------------+
+            |                         | • Hysteresis Downgrade  |
+            |                         | • Hold Window Damping   |
+            |                         +-------------------------+
+            |                                      |
+            | 4. Diagnostics & Risk Snapshot       v
+            |                         +-------------------------+
+            +-----------------------> |      AlertService       |
+            |                         +-------------------------+
+            |                         | • Persistence (N >= 2)  |
+            |                         | • Alert Deduplication   |
+            |                         +-------------------------+
+            |                                      |
+            v                                      v
++---------------------------------------------------------------+
+|                   InterventionEngineService                   |
++---------------------------------------------------------------+
+| • GateAdvisor      (RESTRICT_GATE, OPEN_EXIT)                 |
+| • RouteAdvisor     (OPEN_ROUTE, REDIRECT_INFLOW)              |
+| • PersonnelAdvisor (DEPLOY_PERSONNEL)                         |
+| • Announcement     (BROADCAST_ALERT)                          |
++---------------------------------------------------------------+
+            |
+            | 5. Interactive Simulation Request
+            v
++---------------------------------------------------------------+
+|                       SimulationService                       |
++---------------------------------------------------------------+
+| • Clones Current State (Zero Live Mutation)                   |
+| • Recalculates Capacity & Flow Dynamics                       |
+| • Evaluates Projected Risk via Stateless Scoring Engine       |
+| • Detects Transferred Upstream Queue Pressure                 |
++---------------------------------------------------------------+
+            |
+            | 6. REST / SSE Delivery
+            v
++---------------------------------------------------------------+
+|                  React Authority Dashboard                    |
++---------------------------------------------------------------+
+```
 
-## 3) Service boundaries
+---
 
-## backend (Spring Boot)
-Owns:
-- Event state (current event timeline and status)
-- Venue graph (zones, edges, capacities)
-- Zone metrics state store (latest + short history)
-- Risk scoring (explainable weighted formula)
-- Forecasting (short-horizon projection, e.g., 2-5 minutes)
-- Recommendation generation
-- Simulation endpoint for "what-if" interventions
-- Alert lifecycle (create, dedupe, acknowledge, expire)
-- SSE stream for dashboard/mobile updates
+## 3. Backend Service Responsibilities
 
-Does **not**:
-- Run heavy computer vision directly
-- Depend on live camera for core demo loop
+### 1. `ScenarioPlaybackService`
+- Manages playback state across 4 deterministic scenarios (`s1_normal_flow`, `s2_entry_bottleneck`, `s3_counterflow_panic`, `s4_post_intervention_recovery`).
+- Handles `play`, `pause`, `seek`, `load`, and `reset` lifecycle actions.
+- Broadcasts real-time events over Server-Sent Events (`/api/stream`).
 
-## vision-service (Python)
-Owns:
-- Reading recorded video files
-- Optional person detection/tracking (pluggable)
-- Optical-flow / motion intensity extraction
-- Zone-level metric output per timestamp
-- Data quality flags (no feed, low FPS, missing window)
+### 2. `CrowdAnalyticsService`
+- Computes density trends (persons/m²), net accumulation pressure ($\text{inflow} - \text{outflow}$), speed degradation percentage, queue growth, and movement instability.
+- Identifies **Bottlenecks** with multi-factor explainability (`inflow_exceeds_outflow`, `high_density_accumulation`, `severe_speed_drop`, `growing_queue`).
+- Identifies **Counterflow Conflicts** and opposing movement turbulence.
 
-Emits to backend:
-- Timestamped zone metrics payloads (HTTP push or polled file feed)
+### 3. `RiskScoringService` & `RiskStateService`
+- Evaluates multi-factor risk scores based on configurable weights and thresholds in `application.yml`.
+- Provides human-readable factor contribution percentages and dynamic time-to-critical horizon estimates.
+- **Hysteresis Damping**: Requires sustained improvement over consecutive frames to downgrade severity, eliminating frame-to-frame risk flickering.
 
-## dashboard (React)
-Owns:
-- Live venue map and zone overlays
-- Heatmap + risk zones
-- Explainable risk panel (why score changed)
-- Recommendation feed
-- Intervention simulator UI (calls backend simulation API)
-- Operator action logging (acknowledge/apply recommendation)
+### 4. `AlertService`
+- **Persistence Verification**: Suppresses single-frame noise spikes; requires elevated risk for $\ge 2$ consecutive frames before raising alerts.
+- Deduplicates alerts across zones and time buckets.
 
-## mobile (Kotlin Android)
-Owns:
-- Location-aware safety alerts
-- Congestion warnings
-- Safest route display
-- Incident reporting
-- Emergency information screen
-- Offline cache for last known advisory + route when backend unavailable
+### 5. `InterventionEngineService`
+- Aggregates decision-support advisories from `GateAdvisor`, `RouteAdvisor`, `PersonnelAdvisor`, and `AnnouncementAdvisor`.
+- Ranks candidate recommendations by urgency, impact, and confidence using strictly advisory phrasing.
 
-## 4) End-to-end data flow
+### 6. `SimulationService`
+- Executes what-if intervention testing on an isolated copy of current zone metrics.
+- Flags transferred upstream risk (e.g. gate restrictions shifting queues upstream to exterior holding zones).
+- Guarantees zero mutation to live playback and risk state.
 
-1. **OBSERVE**: vision-service emits zone metrics (or replayed demo-data emits metrics directly).
-2. **UNDERSTAND**: backend validates metrics, fills gaps, updates zone state.
-3. **PREDICT**: backend computes risk + short-term forecast with confidence.
-4. **SIMULATE**: dashboard triggers simulation (e.g., "close Gate B", "open corridor C").
-5. **RECOMMEND**: backend outputs ranked interventions with impact estimate.
-6. **ACT**: operator chooses action; backend records action state.
-7. **VERIFY**: backend tracks post-action metrics deltas and emits outcome.
+---
 
-## 5) Edge-case handling principles
+## 4. API Endpoints Summary
 
-- No camera feed: mark feed `UNAVAILABLE`; switch to degraded mode using last valid metrics + confidence drop.
-- Low FPS: include `quality.lowFps=true`; widen smoothing window; lower confidence.
-- Missing metrics: zone marked `STALE`; risk uses neighbor/temporal interpolation with explicit reason flags.
-- Repeated alerts: dedupe by `(zoneId, alertType, severityBand, timeBucket)`.
-- Risk flickering: hysteresis + minimum hold duration before severity downgrade.
-- Backend unavailable: dashboard/mobile show "stale data" banner and last sync time.
-- Mobile offline: show cached safest route + emergency info, disable incident submission queue flush until online.
-- Invalid incident reports: strict validation with descriptive 4xx errors.
-
-## 6) Simplification strategy (for hackathon fit)
-
-- Start with deterministic prerecorded scenarios first; make live feed optional.
-- Use explainable formula-based risk baseline before any advanced ML model.
-- Keep persistence lightweight (single relational DB) with short event retention.
-- Skip auth/Kafka/Kubernetes in Phase 1; keep deployment single-host demo ready.
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/api/events/current` | Active event metadata and venue identifier |
+| `GET` | `/api/playback` | Current playback state (offset, scenario, playing status) |
+| `POST` | `/api/playback/play` | Starts scenario playback |
+| `POST` | `/api/playback/pause` | Pauses scenario playback |
+| `POST` | `/api/playback/seek` | Seeks to a specific offset in seconds |
+| `POST` | `/api/playback/load` | Loads a target scenario |
+| `GET` | `/api/risk/current` | Real-time overall and per-zone risk assessments |
+| `GET` | `/api/risk/config` | Runtime inspection of risk thresholds and weights |
+| `POST` | `/api/risk/config` | Updates thresholds and weights at runtime |
+| `GET` | `/api/analytics/current` | Venue-wide analytics, bottlenecks, and counterflow |
+| `GET` | `/api/analytics/zones/{zoneId}` | Deep sector diagnostics and historical timeline |
+| `GET` | `/api/alerts` | Active deduplicated incident alerts |
+| `GET` | `/api/recommendations/current` | Prioritized, explainable decision-support advisories |
+| `POST` | `/api/simulations` | Stateless before/after intervention risk projection |
+| `GET` | `/api/stream` | Server-Sent Events (SSE) live update channel |
