@@ -1,52 +1,99 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ZoneAnalyticsDetailResponse } from '../types';
 import { api } from '../api/client';
-import { BarChart3, AlertOctagon, RefreshCw, Compass, TrendingUp } from 'lucide-react';
+import { BarChart3, AlertOctagon, RefreshCw, Compass, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface ZoneDetailPanelProps {
   zoneId: string;
+  refreshTrigger?: number;
 }
 
-export const ZoneDetailPanel: React.FC<ZoneDetailPanelProps> = ({ zoneId }) => {
+export const ZoneDetailPanel: React.FC<ZoneDetailPanelProps> = ({ zoneId, refreshTrigger }) => {
   const [detail, setDetail] = useState<ZoneAnalyticsDetailResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    if (!zoneId) return;
+  const fetchZoneAnalytics = useCallback(async (targetId: string) => {
+    if (!targetId || targetId.trim() === '') {
+      setDetail(null);
+      setError('No sector selected');
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
-    api
-      .getZoneAnalytics(zoneId)
-      .then((data) => {
-        if (active) setDetail(data);
-      })
-      .catch((err) => console.error('Failed to load zone analytics:', err))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    setError(null);
+    try {
+      const data = await api.getZoneAnalytics(targetId);
+      setDetail(data);
+    } catch (err: any) {
+      console.error(`Failed to load zone analytics for ${targetId}:`, err);
+      setError(err.message || `Failed to fetch analytics for sector ${targetId}`);
+      setDetail(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    return () => {
-      active = false;
-    };
-  }, [zoneId]);
+  useEffect(() => {
+    fetchZoneAnalytics(zoneId);
+  }, [zoneId, refreshTrigger, fetchZoneAnalytics]);
 
-  const current = detail?.current;
-  const history = detail?.timelineHistory ?? [];
+  const current = detail?.analytics || detail?.current;
+  const history = detail?.timeline || detail?.timelineHistory || [];
 
   return (
     <div className="card">
       <div className="card-header">
         <span className="card-title">
           <BarChart3 size={17} color="#38bdf8" />
-          Sector Diagnostics: <span className="mono" style={{ color: '#ffffff' }}>{zoneId}</span>
+          Sector Diagnostics: <span className="mono" style={{ color: '#ffffff' }}>{zoneId || 'None'}</span>
         </span>
-        {loading && <RefreshCw size={14} className="animate-spin" color="var(--text-muted)" />}
+        <button
+          className="btn btn-secondary"
+          onClick={() => fetchZoneAnalytics(zoneId)}
+          disabled={loading || !zoneId}
+          style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+          title="Refresh Diagnostics"
+        >
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} color="var(--text-muted)" />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      {!current ? (
+      {loading && !detail ? (
         <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Loading sector metrics...
+          <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 8px', display: 'block' }} />
+          Loading diagnostics for sector <strong className="mono">{zoneId}</strong>...
+        </div>
+      ) : error ? (
+        <div
+          style={{
+            padding: '16px',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '6px',
+            color: '#f87171',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+            <AlertTriangle size={16} />
+            <span>Diagnostics Error: {error}</span>
+          </div>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchZoneAnalytics(zoneId)}
+            style={{ width: 'fit-content', padding: '4px 10px', fontSize: '0.75rem' }}
+          >
+            Retry Fetch
+          </button>
+        </div>
+      ) : !current ? (
+        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          Select a sector above to view detailed diagnostics.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

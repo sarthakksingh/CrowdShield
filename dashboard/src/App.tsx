@@ -163,7 +163,7 @@ export const App: React.FC = () => {
 
           <RiskSummaryPanel risk={risk} />
 
-          <ZoneDetailPanel zoneId={selectedZoneId} />
+          <ZoneDetailPanel zoneId={selectedZoneId} refreshTrigger={playback?.currentOffsetSec} />
         </div>
 
         {/* Right Column: Recommendations, Simulation Sandbox, Alerts */}

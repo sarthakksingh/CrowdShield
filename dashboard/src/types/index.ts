@@ -136,11 +136,14 @@ export interface ZoneAnalyticsTimelinePoint {
 }
 
 export interface ZoneAnalyticsDetailResponse {
-  zoneId: string;
-  current: ZoneAnalytics;
-  timelineHistory: ZoneAnalyticsTimelinePoint[];
-  currentOffsetSec: number;
+  timestamp: string;
+  eventId: string;
   scenarioId: string;
+  currentOffsetSec: number;
+  analytics: ZoneAnalytics;
+  timeline: ZoneAnalyticsTimelinePoint[];
+  current?: ZoneAnalytics;
+  timelineHistory?: ZoneAnalyticsTimelinePoint[];
 }
 
 export interface CurrentAnalyticsResponse {
