@@ -1,0 +1,56 @@
+{
+  "venueId": "venue-main-ground",
+  "name": "Main Ground",
+  "zones": [
+    {
+      "zoneId": "z-entry-a",
+      "name": "Entry A",
+      "capacity": 450,
+      "polygon": [
+        [28.1000, 77.2000],
+        [28.1004, 77.2000],
+        [28.1004, 77.2005],
+        [28.1000, 77.2005]
+      ]
+    },
+    {
+      "zoneId": "z-corridor-1",
+      "name": "Corridor 1",
+      "capacity": 300,
+      "polygon": [
+        [28.1004, 77.2000],
+        [28.1008, 77.2000],
+        [28.1008, 77.2005],
+        [28.1004, 77.2005]
+      ]
+    },
+    {
+      "zoneId": "z-open-yard",
+      "name": "Open Yard",
+      "capacity": 700,
+      "polygon": [
+        [28.1008, 77.2000],
+        [28.1015, 77.2000],
+        [28.1015, 77.2010],
+        [28.1008, 77.2010]
+      ]
+    },
+    {
+      "zoneId": "z-exit-east",
+      "name": "Exit East",
+      "capacity": 600,
+      "polygon": [
+        [28.1015, 77.2002],
+        [28.1018, 77.2002],
+        [28.1018, 77.2008],
+        [28.1015, 77.2008]
+      ]
+    }
+  ],
+  "edges": [
+    { "from": "z-entry-a", "to": "z-corridor-1", "widthMeters": 4.0, "oneWay": false },
+    { "from": "z-corridor-1", "to": "z-open-yard", "widthMeters": 3.0, "oneWay": false },
+    { "from": "z-open-yard", "to": "z-exit-east", "widthMeters": 5.5, "oneWay": false }
+  ],
+  "exits": ["z-exit-east"]
+}

@@ -1,0 +1,12 @@
+crowdshield:
+  demo-data-dir: ../demo-data
+  hysteresis-hold-seconds: 45
+  sse-heartbeat-seconds: 10
+  risk:
+    weights:
+      density-pressure: 0.24
+      inflow-outflow-imbalance: 0.20
+      movement-instability: 0.16
+      opposing-movement: 0.14
+      bottleneck-pressure: 0.18
+      route-availability: 0.08
