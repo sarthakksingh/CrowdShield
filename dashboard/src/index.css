@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-main: #0a0f1d;
+  --bg-card: #111827;
+  --bg-card-hover: #172033;
+  --bg-subtle: #1e293b;
+  --border-color: #2a3749;
+  --border-focus: #3b82f6;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --color-critical: #ef4444;
+  --bg-critical: rgba(239, 68, 68, 0.15);
+  --border-critical: rgba(239, 68, 68, 0.4);
+
+  --color-high: #f97316;
+  --bg-high: rgba(249, 115, 22, 0.15);
+  --border-high: rgba(249, 115, 22, 0.4);
+
+  --color-moderate: #eab308;
+  --bg-moderate: rgba(234, 179, 8, 0.15);
+  --border-moderate: rgba(234, 179, 8, 0.4);
+
+  --color-low: #10b981;
+  --bg-low: rgba(16, 185, 129, 0.15);
+  --border-low: rgba(16, 185, 129, 0.4);
+
+  --color-accent: #38bdf8;
+  --bg-accent: rgba(56, 189, 248, 0.12);
+  --border-accent: rgba(56, 189, 248, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+code, pre, .mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Layout Utilities */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+  padding: 16px 24px 24px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Badge styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-critical {
+  background: var(--bg-critical);
+  color: var(--color-critical);
+  border: 1px solid var(--border-critical);
+}
+
+.badge-high {
+  background: var(--bg-high);
+  color: var(--color-high);
+  border: 1px solid var(--border-high);
+}
+
+.badge-moderate {
+  background: var(--bg-moderate);
+  color: var(--color-moderate);
+  border: 1px solid var(--border-moderate);
+}
+
+.badge-low {
+  background: var(--bg-low);
+  color: var(--color-low);
+  border: 1px solid var(--border-low);
+}
+
+.badge-advisory {
+  background: var(--bg-accent);
+  color: var(--color-accent);
+  border: 1px solid var(--border-accent);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--text-muted);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--color-critical);
+  border-color: var(--border-critical);
+}
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
