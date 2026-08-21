@@ -107,8 +107,20 @@ public class ApiController {
                 "timestamp", Instant.now().toString(),
                 "eventId", eventId,
                 "overallRisk", risk.overallRisk(),
-                "zoneRisks", risk.zoneRisks());
+                "zoneRisks", risk.zoneRisks(),
+                "disclaimer", risk.disclaimer());
     }
+
+    @GetMapping("/risk/config")
+    public com.crowdshield.model.RiskConfigDto getRiskConfig() {
+        return riskScoringService.getRiskConfig();
+    }
+
+    @PostMapping("/risk/config")
+    public com.crowdshield.model.RiskConfigDto updateRiskConfig(@Valid @RequestBody com.crowdshield.model.RiskConfigDto request) {
+        return riskScoringService.updateRiskConfig(request);
+    }
+
 
     @GetMapping("/alerts")
     public Map<String, Object> alerts() {

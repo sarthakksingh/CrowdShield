@@ -23,6 +23,8 @@ public class ApiExceptionHandler {
             errorType = "INVALID_INCIDENT_REPORT";
         } else if (path.contains("playback")) {
             errorType = "INVALID_PLAYBACK_REQUEST";
+        } else if (path.contains("risk")) {
+            errorType = "INVALID_RISK_CONFIG";
         }
 
         List<String> details = ex.getBindingResult().getFieldErrors().stream()
@@ -52,6 +54,8 @@ public class ApiExceptionHandler {
             error = "INVALID_PLAYBACK_REQUEST";
         } else if (message.contains("location.zoneId")) {
             error = "INVALID_INCIDENT_REPORT";
+        } else if (message.contains("Thresholds") || message.contains("Weight") || message.contains("Risk configuration")) {
+            error = "INVALID_RISK_CONFIG";
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of(

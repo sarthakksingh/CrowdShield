@@ -6,6 +6,10 @@ crowdshield:
   hysteresis-hold-seconds: 45
   sse-heartbeat-seconds: 10
   risk:
+    thresholds:
+      moderate: 0.35
+      high: 0.55
+      critical: 0.75
     weights:
       density-pressure: 0.24
       inflow-outflow-imbalance: 0.20
@@ -13,3 +17,10 @@ crowdshield:
       opposing-movement: 0.14
       bottleneck-pressure: 0.18
       route-availability: 0.08
+    persistence:
+      required-consecutive-frames: 2
+    hysteresis:
+      downgrade-consecutive-frames: 2
+      hold-seconds: 45
+    disclaimer: "Prototype heuristic safety scoring for demonstration purposes only; not certified life-safety software."
+

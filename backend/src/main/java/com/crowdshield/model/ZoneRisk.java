@@ -11,4 +11,20 @@ public record ZoneRisk(
         double confidence,
         List<String> reasons,
         Map<String, Double> factorContributions,
-        String holdUntil) {}
+        Map<String, String> factorDescriptions,
+        String horizon,
+        String holdUntil,
+        String disclaimer) {
+
+    public ZoneRisk(
+            String zoneId,
+            double score,
+            RiskLevel level,
+            String trend,
+            double confidence,
+            List<String> reasons,
+            Map<String, Double> factorContributions,
+            String holdUntil) {
+        this(zoneId, score, level, trend, confidence, reasons, factorContributions, Map.of(), "N/A", holdUntil, "");
+    }
+}
