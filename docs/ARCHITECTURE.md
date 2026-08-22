@@ -157,4 +157,47 @@ CrowdShield is a real-time crowd safety intelligence and decision-support platfo
 | `GET` | `/api/alerts` | Active deduplicated incident alerts |
 | `GET` | `/api/recommendations/current` | Prioritized, explainable decision-support advisories |
 | `POST` | `/api/simulations` | Stateless before/after intervention risk projection |
+| `POST` | `/api/incidents` | Ground citizen incident report dispatch |
 | `GET` | `/api/stream` | Server-Sent Events (SSE) live update channel |
+
+---
+
+## 5. Deployment Architecture
+
+CrowdShield is deployed across a decoupled, cloud-native infrastructure with full HTTPS and CORS security:
+
+```text
++-----------------------------------------------------------------------------------+
+|                            LIVE DEPLOYED TOPOLOGY                                 |
++-----------------------------------------------------------------------------------+
+
+   +---------------------------------------+
+   |   Authority Dashboard (Vercel)        |
+   |   https://crowd-shield-three.vercel.app |
+   +---------------------------------------+
+                      |
+                      | HTTPS / SSE (VITE_API_BASE_URL)
+                      v
+   +---------------------------------------+      HTTPS / JSON       +------------------------------------+
+   |   Backend Service (Render)            | <---------------------- |   Citizen Mobile App (Android)     |
+   |   https://crowdshield-backend-iy6g    |                         |   Kotlin + Jetpack Compose         |
+   |   .onrender.com                       |                         |   (mobile/app)                     |
+   +---------------------------------------+                         +------------------------------------+
+                      |
+           [ Multi-Stage Docker ]
+           - Builder: gradle:8.8-jdk21-alpine
+           - Runtime: eclipse-temurin:21-jre-alpine (non-root)
+           - Dynamic Port: ${PORT:8080}
+           - Data Dir: ${DEMO_DATA_DIR:/demo-data}
+```
+
+1. **Backend Service (Render)**:
+   - Built using a secure, multi-stage [`backend/Dockerfile`](../backend/Dockerfile) (`gradle:8.8-jdk21-alpine` builder and `eclipse-temurin:21-jre-alpine` runtime).
+   - Runs as an unprivileged system user `crowdshield:crowdshield`.
+   - Supports dynamic port binding (`${PORT:8080}`) and environment-driven data directory resolution (`${DEMO_DATA_DIR:/demo-data}`).
+2. **Authority Dashboard (Vercel)**:
+   - High-performance React SPA built with Vite and TypeScript.
+   - Configured with `VITE_API_BASE_URL=https://crowdshield-backend-iy6g.onrender.com` to communicate securely across origins.
+3. **Citizen Mobile App (Android)**:
+   - Native Android client in `mobile/app` using Jetpack Compose and Retrofit 2.
+   - Points directly to `https://crowdshield-backend-iy6g.onrender.com/` for real-time risk telemetry, alert notifications, and crowd dispatch triage.

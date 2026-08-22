@@ -1,6 +1,14 @@
 # CrowdShield — Live Demo Script & Video Proof Guide
 
-A deterministic, timed walkthrough script for recording hackathon video proof and live presentations.
+A deterministic, timed walkthrough script for recording hackathon video proof and live presentations using the deployed production system.
+
+---
+
+## 🌐 Live Demo Target Environment
+
+- **Live Authority Dashboard (Primary)**: [https://crowd-shield-three.vercel.app](https://crowd-shield-three.vercel.app)
+- **Live Backend API**: [https://crowdshield-backend-iy6g.onrender.com](https://crowdshield-backend-iy6g.onrender.com)
+- **Local Fallback**: `http://localhost:5173` (via `start-dashboard.bat`) and `http://localhost:8080` (via `start-backend.bat`).
 
 ---
 
@@ -8,25 +16,26 @@ A deterministic, timed walkthrough script for recording hackathon video proof an
 
 Run this quick checklist before every recording take to ensure a 100% reproducible demo:
 
-1. **Backend Check**:
-   - Ensure `http://localhost:8080/api/playback` returns HTTP 200:
+1. **Backend Health Check**:
+   - Ensure the live backend endpoint returns HTTP 200:
      ```bash
-     curl -s http://localhost:8080/api/playback
+     curl -s https://crowdshield-backend-iy6g.onrender.com/api/playback
      ```
-2. **Dashboard Check**:
-   - Ensure Vite is running on `http://localhost:5173`.
+     *(If spinning up from sleep on Render, wait ~30-45s for the initial cold start)*
+2. **Dashboard Access**:
+   - Open [https://crowd-shield-three.vercel.app](https://crowd-shield-three.vercel.app) in your browser.
 3. **State Reset**:
    - If resetting between takes, click the **Reset** button in the dashboard playback bar (or select `1. Normal Flow (Baseline)` from the dropdown) to return the timeline to `t=00:00`.
 4. **Browser Setup**:
-   - Open browser at `100%` zoom on `http://localhost:5173`.
-   - Ensure full viewport visibility showing both the Venue Overview, Risk Assessment, Recommendations, and Simulation Sandbox.
+   - Open browser at `100%` zoom.
+   - Ensure full viewport visibility showing the Venue Overview, Risk Assessment, Recommendations, and Simulation Sandbox.
 
 ---
 
 ## Timed Walkthrough Beats
 
 ### Beat 1: Cold Open (10–15s)
-- **Action**: Launch the dashboard via `start-dashboard.bat` (or refresh `http://localhost:5173`).
+- **Action**: Open [https://crowd-shield-three.vercel.app](https://crowd-shield-three.vercel.app) (or local fallback `http://localhost:5173`).
 - **Narrative**:
   > "Welcome to CrowdShield — an intelligent crowd safety intelligence and decision-support system designed to prevent stampedes and crush incidents before they happen. Notice our prototype safety disclaimer banner at the top, emphasizing that CrowdShield operates as an advisory decision-support platform for authorized operations personnel."
 
@@ -37,6 +46,7 @@ Run this quick checklist before every recording take to ensure a 100% reproducib
 - **Visuals to Point Out**:
   - Venue Zone Overview cards all display **LOW** risk with green borders.
   - Overall Risk Index is nominal (~0.20), STABLE trend.
+  - Statistical Projection card indicates stable baseline projection across 60s and 180s horizons.
   - Recommendation Panel displays: *"No Urgent Interventions Required — Crowd flow is laminar."*
   - Alerts feed confirms *"All Zones Nominal"*.
 - **Narrative**:
@@ -47,7 +57,7 @@ Run this quick checklist before every recording take to ensure a 100% reproducib
 ### Beat 3: Risk Build-up (30–45s)
 - **Action**: In the scenario dropdown, select `2. Entry Bottleneck & Choke` and click **Play** (or seek to `00:40`).
 - **Visuals to Point Out**:
-  - Live timeline counter increments live via Server-Sent Events (SSE).
+  - Live timeline counter increments smoothly via Server-Sent Events (SSE) and client-side interpolation.
   - Inflow at Entry A reaches 128 persons/min while Corridor 1 outflow drops to 59 persons/min.
   - Corridor 1 density climbs rapidly from 1.5 to 3.8+ persons/m².
   - Net flow indicator turns orange (`+69/m`), and queue length accumulates.
@@ -71,12 +81,13 @@ Run this quick checklist before every recording take to ensure a 100% reproducib
 
 ---
 
-### Beat 5: Time-to-Critical Horizon (10–15s)
-- **Action**: Point cursor to the **TIME-TO-CRITICAL HORIZON** card in the Risk Summary panel.
+### Beat 5: Short-Horizon Prediction & Time-to-Critical (15–20s)
+- **Action**: Point cursor to the **Statistical Projection** and **Time-to-Critical Horizon** cards in the Risk Assessment panel.
 - **Visuals to Point Out**:
   - Horizon reads `"immediate (< 1 min)"` or `"1-2 min"`.
+  - Statistical forecast projects critical risk at +60s and +180s horizons with high confidence and model consensus.
 - **Narrative**:
-  > "Notice our dynamic Time-to-Critical Horizon estimate: operations teams are alerted that critical crush conditions are imminent within 1 to 2 minutes if current inflow trends continue."
+  > "Our dual forecasting engine combines linear trend regression and Holt's exponential smoothing to project risk 30 seconds to 5 minutes into the future. Operators are given early warning before physical disaster occurs."
 
 ---
 
@@ -87,7 +98,7 @@ Run this quick checklist before every recording take to ensure a 100% reproducib
     - `#1 RESTRICT_GATE` on `z-entry-a`: *"Meters incoming crowd rate to prevent hazardous crush pressure."*
     - `#2 OPEN_ROUTE` on `z-corridor-1`: *"Provides immediate bypass relief into open sectors."*
     - `#3 DEPLOY_PERSONNEL` on `z-corridor-1`: *"Dispatches safety stewards for physical queue management."*
-    - `#4 BROADCAST_ALERT`: Suggested public address script.
+    - `#4 BROADCAST_ALERT`: Suggested public address announcement script.
 - **Narrative**:
   > "The Intervention Engine automatically generates ranked, concrete actions. Notice the advisory language: CrowdShield recommends restricting Gate A turnstiles and opening bypass routes. Each suggestion includes grounded reasons, expected qualitative impact, and confidence scores — strictly decision-support for human operators."
 
@@ -115,14 +126,17 @@ Run this quick checklist before every recording take to ensure a 100% reproducib
 
 ---
 
-### Beat 9: Close & Tech Stack Summary (10s)
-- **Action**: Point cursor back to the safety disclaimer banner and tech badges in the header.
+### Beat 9: Citizen Mobile App & Closing (20–30s)
+- **Action**: Show the native Android Citizen Mobile App running on phone or emulator connected to the live Render backend:
+  - Tab 1: Live Venue Risk & Sector Badges
+  - Tab 2: Active Incident Alerts Feed
+  - Tab 3: Incident Report Dispatch
 - **Narrative**:
-  > "CrowdShield is powered by a high-performance Java Spring Boot backend with real-time heuristic risk scoring and SSE streaming, coupled with a React, TypeScript, and Vite operations dashboard. Thank you."
+  > "Simultaneously, citizens and on-ground stewards receive synchronized safety telemetry and can report incidents directly via our native Android mobile app. CrowdShield bridges the gap between high-level operations control and on-the-ground safety. Thank you."
 
 ---
 
 ## 3x Repeatability Test Summary
 - Scenario switching between `s1` → `s2` → `s4` resets cleanly with zero residual state pollution.
-- Live SSE stream updates without page refresh.
+- Live SSE stream updates seamlessly on both local and deployed Vercel/Render instances.
 - Simulation runs statelessly without altering live playback metrics.
