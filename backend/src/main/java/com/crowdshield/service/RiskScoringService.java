@@ -272,7 +272,7 @@ public class RiskScoringService {
         lastOffsetSec = playbackState.currentOffsetSec();
     }
 
-    private ScoredRisk score(ZoneMetric metric) {
+    public ScoredRisk score(ZoneMetric metric) {
         Map<String, Double> rawFactors = new LinkedHashMap<>();
         rawFactors.put("density_pressure", metric.densityPressure());
         rawFactors.put("inflow_outflow_imbalance", metric.inflowOutflowImbalance());
@@ -383,7 +383,7 @@ public class RiskScoringService {
         return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 
-    private RiskLevel levelFor(double score) {
+    public RiskLevel levelFor(double score) {
         if (score < moderateThreshold) {
             return RiskLevel.LOW;
         }
@@ -410,5 +410,5 @@ public class RiskScoringService {
         return Math.round(value * 1000.0) / 1000.0;
     }
 
-    private record ScoredRisk(double score, Map<String, Double> contributions, List<String> reasons) {}
+    public record ScoredRisk(double score, Map<String, Double> contributions, List<String> reasons) {}
 }
