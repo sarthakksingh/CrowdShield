@@ -25,6 +25,10 @@ COPY --chown=crowdshield:crowdshield demo-data /demo-data
 # Copy compiled jar from builder
 COPY --from=builder --chown=crowdshield:crowdshield /app/build/libs/*.jar app.jar
 
+# Set default environment variables
+ENV DEMO_DATA_DIR=/demo-data
+ENV PORT=8080
+
 # Expose backend API port
 EXPOSE 8080
 

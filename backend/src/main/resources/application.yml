@@ -1,8 +1,8 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 crowdshield:
-  demo-data-dir: ../demo-data
+  demo-data-dir: ${DEMO_DATA_DIR:../demo-data}
   hysteresis-hold-seconds: 45
   sse-heartbeat-seconds: 10
   risk:
