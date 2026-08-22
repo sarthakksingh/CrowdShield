@@ -10,12 +10,18 @@
 - **Phase 7** — Intervention Engine: COMPLETE
 - **Phase 8** — Simulation: COMPLETE
 - **Phase 9** — Authority Dashboard: COMPLETE
+- **Phase 10** — Mobile Citizen App (Scoped 3-Screen Native Android): COMPLETE
 - **Phase 13** — Demo Engineering & Presentation Readiness: COMPLETE
 
 ## Verified State
-- Backend tests pass (67/67) (`.\gradlew.bat --no-daemon --console=plain test`)
+- Backend tests pass (68/68) (`.\gradlew.bat --no-daemon --console=plain test`)
 - Backend builds (`.\gradlew.bat --no-daemon --console=plain bootJar`)
 - Dashboard builds with zero errors (`cd dashboard && npm run build`)
+- Android Citizen App builds cleanly (`cd mobile && .\gradlew.bat assembleDebug`)
+- 3 Native Android Screens:
+  1. **Live Risk Screen**: Real-time venue risk, overall index, trend, time-to-critical, and color-coded zone list.
+  2. **Alerts Screen**: Active incident feed, severity badges, timestamps, and nominal empty state.
+  3. **Incident Report Screen**: Ground incident dispatch form with zone dropdown, category/severity selectors, description field, and POST `/api/incidents` transmission.
 - Working endpoints:
   - Scenario playback + SSE (`/api/playback`, `/api/stream`)
   - Analytics (`/api/analytics/current`, `/api/analytics/zones/{zoneId}`)

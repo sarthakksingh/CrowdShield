@@ -54,6 +54,27 @@ class ApiEndpointsTest {
     }
 
     @Test
+    void validIncidentReportReturns202() throws Exception {
+        String validIncident = """
+                {
+                  "eventId": "event-tech-nova-2026",
+                  "reporterType": "CITIZEN",
+                  "location": {"lat": 28.1022, "lon": 77.2011, "zoneId": "z-corridor-1"},
+                  "category": "CONGESTION",
+                  "severity": "HIGH",
+                  "description": "Heavy congestion building at corridor 1",
+                  "reportedAt": "2026-08-22T11:30:00Z"
+                }
+                """;
+        mockMvc.perform(post("/api/incidents")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validIncident))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("RECEIVED"))
+                .andExpect(jsonPath("$.incidentId").exists());
+    }
+
+    @Test
     void invalidIncidentReportReturns400() throws Exception {
         String invalidIncident = """
                 {
