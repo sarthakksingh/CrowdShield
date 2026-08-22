@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PlaybackState } from '../types';
 import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
 
@@ -19,8 +19,9 @@ const SCENARIOS = [
 ];
 
 function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const rounded = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(rounded / 60);
+  const s = rounded % 60;
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
@@ -37,6 +38,56 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
   const isPlaying = playback?.playing ?? false;
   const speed = playback?.playbackSpeed ?? 1.0;
   const currentScenario = playback?.scenarioId ?? 's1_normal_flow';
+
+  const [displayOffset, setDisplayOffset] = useState<number>(currentOffset);
+  const isSeekingRef = useRef<boolean>(false);
+
+  const baseOffsetRef = useRef<number>(currentOffset);
+  const syncTimeRef = useRef<number>(Date.now());
+  const isPlayingRef = useRef<boolean>(isPlaying);
+  const speedRef = useRef<number>(speed);
+  const durationRef = useRef<number>(duration);
+
+  isPlayingRef.current = isPlaying;
+  speedRef.current = speed;
+  durationRef.current = duration;
+
+  // Reconcile with authoritative backend state updates
+  useEffect(() => {
+    if (!isSeekingRef.current) {
+      baseOffsetRef.current = currentOffset;
+      syncTimeRef.current = Date.now();
+      setDisplayOffset(currentOffset);
+    }
+  }, [currentOffset, currentScenario]);
+
+  // Smooth client-side interval ticker (100ms) for second-by-second smooth timeline progression
+  useEffect(() => {
+    if (!isPlaying) {
+      setDisplayOffset(currentOffset);
+      return;
+    }
+
+    baseOffsetRef.current = currentOffset;
+    syncTimeRef.current = Date.now();
+
+    const interval = setInterval(() => {
+      if (!isPlayingRef.current || isSeekingRef.current) return;
+      const elapsedSec = ((Date.now() - syncTimeRef.current) / 1000) * speedRef.current;
+      const interpolated = Math.min(durationRef.current, baseOffsetRef.current + elapsedSec);
+      setDisplayOffset(interpolated);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, currentOffset, speed]);
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const targetOffset = parseInt(e.target.value, 10);
+    setDisplayOffset(targetOffset);
+    baseOffsetRef.current = targetOffset;
+    syncTimeRef.current = Date.now();
+    onSeek(targetOffset);
+  };
 
   return (
     <div
@@ -102,19 +153,40 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
         )}
 
         {/* Reset */}
-        <button className="btn btn-secondary" onClick={onReset} title="Reset to t=0">
+        <button
+          className="btn btn-secondary"
+          onClick={() => {
+            setDisplayOffset(0);
+            baseOffsetRef.current = 0;
+            syncTimeRef.current = Date.now();
+            onReset();
+          }}
+          title="Reset to t=0"
+        >
           <RotateCcw size={15} />
         </button>
 
-        {/* Timeline Slider */}
+        {/* Timeline Slider with step=1 for smooth drag and positioning */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1' }}>
           <input
             type="range"
             min="0"
             max={duration}
-            step="10"
-            value={currentOffset}
-            onChange={(e) => onSeek(parseInt(e.target.value, 10))}
+            step="1"
+            value={Math.min(duration, Math.max(0, Math.round(displayOffset)))}
+            onMouseDown={() => {
+              isSeekingRef.current = true;
+            }}
+            onTouchStart={() => {
+              isSeekingRef.current = true;
+            }}
+            onChange={handleSliderChange}
+            onMouseUp={() => {
+              isSeekingRef.current = false;
+            }}
+            onTouchEnd={() => {
+              isSeekingRef.current = false;
+            }}
             style={{
               flex: '1',
               accentColor: '#38bdf8',
@@ -134,7 +206,7 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
           >
             <Clock size={13} color="var(--text-muted)" />
             <span>
-              {formatTime(currentOffset)} / {formatTime(duration)}
+              {formatTime(displayOffset)} / {formatTime(duration)}
             </span>
           </div>
         </div>
