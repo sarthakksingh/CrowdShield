@@ -1,9 +1,10 @@
 import React from 'react';
-import { RiskResponse, RiskLevel } from '../types';
-import { Activity, TrendingUp, TrendingDown, Minus, Clock, Zap } from 'lucide-react';
+import { RiskResponse, RiskLevel, ForecastResponse } from '../types';
+import { Activity, TrendingUp, TrendingDown, Minus, Clock, Zap, Compass } from 'lucide-react';
 
 interface RiskSummaryPanelProps {
   risk: RiskResponse | null;
+  forecast?: ForecastResponse | null;
 }
 
 function getBadgeClass(level?: RiskLevel): string {
@@ -35,7 +36,7 @@ const FACTOR_NAMES: Record<string, string> = {
   route_availability: 'Route Availability Deficit',
 };
 
-export const RiskSummaryPanel: React.FC<RiskSummaryPanelProps> = ({ risk }) => {
+export const RiskSummaryPanel: React.FC<RiskSummaryPanelProps> = ({ risk, forecast }) => {
   const overall = risk?.overallRisk;
   const score = overall?.score ?? 0.0;
   const level = overall?.level ?? 'LOW';
@@ -43,6 +44,9 @@ export const RiskSummaryPanel: React.FC<RiskSummaryPanelProps> = ({ risk }) => {
   const horizon = overall?.horizon ?? 'nominal';
   const contributions = overall?.contributions ?? {};
   const factorDescriptions = overall?.factorDescriptions ?? {};
+
+  const overallForecast = forecast?.overallForecast;
+  const methodsAgree = forecast?.zoneForecasts ? forecast.zoneForecasts.every((z) => z.methodsAgree) : true;
 
   return (
     <div className="card">
@@ -60,7 +64,7 @@ export const RiskSummaryPanel: React.FC<RiskSummaryPanelProps> = ({ risk }) => {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '12px',
-          marginBottom: '16px',
+          marginBottom: '14px',
         }}
       >
         {/* Score Card */}
@@ -138,6 +142,141 @@ export const RiskSummaryPanel: React.FC<RiskSummaryPanelProps> = ({ risk }) => {
           </div>
         </div>
       </div>
+
+      {/* Short-Horizon Statistical Projection */}
+      {overallForecast && (
+        <div
+          style={{
+            background: 'var(--bg-subtle)',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            marginBottom: '14px',
+            border: '1px solid var(--border-color)',
+            opacity: methodsAgree ? 1.0 : 0.85,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '8px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+            >
+              <Compass size={13} color="#38bdf8" />
+              <span>STATISTICAL PROJECTION (Linear + Exp Smoothing)</span>
+            </div>
+            <div
+              style={{
+                fontSize: '0.72rem',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>Confidence: <strong>{Math.round((overallForecast.confidence ?? 0.85) * 100)}%</strong></span>
+              {!methodsAgree && (
+                <span
+                  style={{
+                    color: '#f97316',
+                    fontSize: '0.68rem',
+                    background: 'rgba(249, 115, 22, 0.15)',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                  }}
+                  title="Models diverge; projection dampened"
+                >
+                  Divergence Damped
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '8px',
+              textAlign: 'center',
+            }}
+          >
+            {/* Trajectory */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>PROJECTED TREND</div>
+              <div
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: overallForecast.trend === 'RISING' ? '#ef4444' : overallForecast.trend === 'FALLING' ? '#10b981' : 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '3px',
+                  marginTop: '2px',
+                }}
+              >
+                {overallForecast.trend === 'RISING' && <TrendingUp size={13} />}
+                {overallForecast.trend === 'FALLING' && <TrendingDown size={13} />}
+                {overallForecast.trend === 'STABLE' && <Minus size={13} />}
+                <span>{overallForecast.trend}</span>
+              </div>
+            </div>
+
+            {/* +60s Horizon */}
+            {overallForecast.horizons?.['60'] && (
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>+60s HORIZON</div>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    color: getScoreColor(overallForecast.horizons['60'].score),
+                    marginTop: '2px',
+                  }}
+                >
+                  {overallForecast.horizons['60'].score.toFixed(2)}
+                  <span style={{ fontSize: '0.68rem', marginLeft: '4px', fontWeight: 600 }}>
+                    ({overallForecast.horizons['60'].level})
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* +180s Horizon */}
+            {overallForecast.horizons?.['180'] && (
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>+180s HORIZON</div>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    color: getScoreColor(overallForecast.horizons['180'].score),
+                    marginTop: '2px',
+                  }}
+                >
+                  {overallForecast.horizons['180'].score.toFixed(2)}
+                  <span style={{ fontSize: '0.68rem', marginLeft: '4px', fontWeight: 600 }}>
+                    ({overallForecast.horizons['180'].level})
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Factor Contribution Drivers */}
       <div>

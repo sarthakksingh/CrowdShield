@@ -7,6 +7,7 @@ import {
   AlertRecord,
   RecommendationsResponse,
   Recommendation,
+  ForecastResponse,
 } from './types';
 import { api } from './api/client';
 import { useSSE } from './hooks/useSSE';
@@ -23,6 +24,7 @@ export const App: React.FC = () => {
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [playback, setPlayback] = useState<PlaybackState | null>(null);
   const [risk, setRisk] = useState<RiskResponse | null>(null);
+  const [forecast, setForecast] = useState<ForecastResponse | null>(null);
   const [analytics, setAnalytics] = useState<CurrentAnalyticsResponse | null>(null);
   const [alerts, setAlerts] = useState<AlertRecord[]>([]);
   const [recommendations, setRecommendations] = useState<RecommendationsResponse | null>(null);
@@ -40,6 +42,7 @@ export const App: React.FC = () => {
         eventData,
         playbackData,
         riskData,
+        forecastData,
         analyticsData,
         alertsData,
         recommendationsData,
@@ -47,6 +50,7 @@ export const App: React.FC = () => {
         api.getEvent().catch(() => null),
         api.getPlaybackState().catch(() => null),
         api.getCurrentRisk().catch(() => null),
+        api.getForecast().catch(() => null),
         api.getCurrentAnalytics().catch(() => null),
         api.getAlerts().catch(() => []),
         api.getRecommendations().catch(() => null),
@@ -55,6 +59,7 @@ export const App: React.FC = () => {
       if (eventData) setEvent(eventData);
       if (playbackData) setPlayback(playbackData);
       if (riskData) setRisk(riskData);
+      if (forecastData) setForecast(forecastData);
       if (analyticsData) setAnalytics(analyticsData);
       if (alertsData) setAlerts(Array.isArray(alertsData) ? alertsData : []);
       if (recommendationsData) setRecommendations(recommendationsData);
@@ -161,7 +166,7 @@ export const App: React.FC = () => {
             onSelectZone={setSelectedZoneId}
           />
 
-          <RiskSummaryPanel risk={risk} />
+          <RiskSummaryPanel risk={risk} forecast={forecast} />
 
           <ZoneDetailPanel zoneId={selectedZoneId} refreshTrigger={playback?.currentOffsetSec} />
         </div>

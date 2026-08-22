@@ -8,6 +8,7 @@ import {
   SimulationResponse,
   ZoneAnalyticsDetailResponse,
   AlertRecord,
+  ForecastResponse,
 } from '../types';
 
 const API_BASE = '';
@@ -65,6 +66,8 @@ export const api = {
     }),
 
   getCurrentRisk: () => fetchJson<RiskResponse>('/api/risk/current'),
+
+  getForecast: () => fetchJson<ForecastResponse>('/api/forecast/current'),
 
   getCurrentAnalytics: () =>
     fetchJson<CurrentAnalyticsResponse>('/api/analytics/current'),

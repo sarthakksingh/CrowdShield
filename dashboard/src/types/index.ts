@@ -257,3 +257,46 @@ export interface SimulationResponse {
   verdict: 'IMPROVED' | 'WORSENED' | 'NO_SIGNIFICANT_CHANGE';
   recommendation: string;
 }
+
+export interface HorizonRiskForecast {
+  horizonSec: number;
+  score: number;
+  level: RiskLevel;
+  deltaFromCurrent: number;
+}
+
+export interface ZoneForecast {
+  zoneId: string;
+  currentScore: number;
+  currentLevel: RiskLevel;
+  horizons: Record<string, HorizonRiskForecast>;
+  trend: 'RISING' | 'FALLING' | 'STABLE';
+  method: string;
+  methodsAgree: boolean;
+  confidence: number;
+  horizonEstimate: string;
+  reasons: string[];
+}
+
+export interface OverallForecast {
+  currentScore: number;
+  currentLevel: RiskLevel;
+  horizons: Record<string, HorizonRiskForecast>;
+  trend: 'RISING' | 'FALLING' | 'STABLE';
+  confidence: number;
+  timeToCriticalSec: number;
+  horizonEstimate: string;
+  reasons: string[];
+}
+
+export interface ForecastResponse {
+  timestamp: string;
+  eventId: string;
+  scenarioId: string;
+  currentOffsetSec: number;
+  horizonsSec: number[];
+  overallForecast: OverallForecast;
+  zoneForecasts: ZoneForecast[];
+  disclaimer: string;
+}
+
