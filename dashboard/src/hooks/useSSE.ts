@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { API_BASE_URL } from '../api/client';
 
 export function useSSE(onMessage: () => void) {
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -9,7 +10,8 @@ export function useSSE(onMessage: () => void) {
     function connect() {
       if (!active) return;
       try {
-        const es = new EventSource('/api/stream');
+        const streamUrl = `${API_BASE_URL}/api/stream`;
+        const es = new EventSource(streamUrl);
         eventSourceRef.current = es;
 
         es.addEventListener('zone_metrics', () => {

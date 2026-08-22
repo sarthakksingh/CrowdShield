@@ -11,10 +11,14 @@ import {
   ForecastResponse,
 } from '../types';
 
-const API_BASE = '';
+export const API_BASE_URL: string = (
+  import.meta.env.VITE_API_BASE_URL ?? ''
+).replace(/\/+$/, '');
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${url}`, {
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${API_BASE_URL}${normalizedUrl}`;
+  const res = await fetch(fullUrl, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
